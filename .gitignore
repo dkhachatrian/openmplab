@@ -1,2 +1,5 @@
 filter
 gmon.out
+omp
+output.txt
+seq
