@@ -7,6 +7,7 @@ const int NUM_THREADS = 4;
 
 void func0(double *weights, double *arrayX, double *arrayY, int xr, int yr, int n)
 {
+   printf("Entering func0\n");
 	int i;
    // hoist out division
    double weight = 1/((double)(n));
@@ -20,28 +21,32 @@ void func0(double *weights, double *arrayX, double *arrayY, int xr, int yr, int 
    		arrayY[i] = yr;
    	}
    }
+   printf("Exiting func0\n");
+
 }
 
 void func1(int *seed, int *array, double *arrayX, double *arrayY,
 			double *probability, double *objxy, int *index,
 			int Ones, int iter, int X, int Y, int Z, int n)
 {
+   printf("Entering func1\n");
+
 	int i, j;
    	int index_X, index_Y;
 	int max_size = X*Y*Z;
 
       // #pragma omp parallel for
-   #pragma omp parallel
-   {
+   // #pragma omp parallel
+   // {
       #pragma omp for private(i)
    	for(i = 0; i < n; i++){
    		arrayX[i] += 1 + 5*rand2(seed, i);
    		arrayY[i] += -2 + 2*rand2(seed, i);
    	}
-   }
+   // }
       // #pragma omp parallel for
-   #pragma omp parallel
-   {
+   // #pragma omp parallel 
+   // {
    	for(i = 0; i<n; i++){
          // #pragma omp single //results can be shared during nested loop
          // {
@@ -49,6 +54,7 @@ void func1(int *seed, int *array, double *arrayX, double *arrayY,
          double arryi = arrayY[i];
          int iones = i*Ones;
          // }
+         // #pragma omp for private(i,j)
          #pragma omp for private(j)
    		for(j = 0; j < Ones; j++){
             // do less math by saving answer early
@@ -73,12 +79,16 @@ void func1(int *seed, int *array, double *arrayX, double *arrayY,
    		// 					  pow((array[index[i*Ones + j]]-228),2))/50.0;
    		// }
    		probability[i] = probability[i]/((double) Ones);
-   	}
+   	// }
    }
+   printf("Exiting func1\n");
+
 }
 
 void func2(double *weights, double *probability, int n)
 {
+   printf("Entering func2\n");
+
 	int i;
 	double sumWeights=0;
 
@@ -114,10 +124,14 @@ void func2(double *weights, double *probability, int n)
 
 	// for(i = 0; i < n; i++)
  //   		weights[i] = weights[i]/sumWeights;
+   printf("Exiting func2\n");
+
 }
 
 void func3(double *arrayX, double *arrayY, double *weights, double *x_e, double *y_e, int n)
 {
+   printf("Entering func3\n");
+
 	double estimate_x=0.0;
 	double estimate_y=0.0;
    int i;
@@ -141,34 +155,46 @@ void func3(double *arrayX, double *arrayY, double *weights, double *x_e, double 
 	*x_e = estimate_x;
 	*y_e = estimate_y;
 
+   printf("Exiting func3\n");
+
+
 }
 
 void func4(double *u, double u1, int n)
 {
+   printf("Entering func4\n");
+
 	int i;
 
    #pragma omp parallel for private(i)
 	for(i = 0; i < n; i++){
    		u[i] = u1 + i/((double)(n));
    	}
+   printf("Exiting func4\n");
+
 }
 
 void func5(double *x_j, double *y_j, double *arrayX, double *arrayY, double *weights, double *cfd, double *u, int n)
 {
+   printf("Entering func5\n");
+
 	// int i, j;
 
    // hoist out division
-   double weight = 1/((double)(n));
+   // int i,j;
    int i,j;
 
-   // #pragma omp parallel for private(j) num_threads(NUM_THREADS) //should not be allowed to share i, so declare inside loop
-   #pragma omp parallel
-   {
-      #pragma omp for private(i,j)
+   // // #pragma omp parallel for private(j) num_threads(NUM_THREADS) //should not be allowed to share i, so declare inside loop
+   // #pragma omp parallel
+   // {
+   //    #pragma omp for private(i,j)
+      // #pragma omp parallel for private(i,j)
+      // #pragma omp parallel for private(j)
       for(j = 0; j < n; j++){
    	// for(j = 0; j < n; j++){
       		//i = findIndex(cfd, n, u[j]);
             i = findIndexBin(cfd, 0, n, u[j]);
+            // int i = findIndexBin(cfd, 0, n, u[j]);
 
       		// i = findIndexBin(cfd, 0, n, u[j]);
       		if(i == -1)
@@ -177,16 +203,21 @@ void func5(double *x_j, double *y_j, double *arrayX, double *arrayY, double *wei
       		y_j[j] = arrayY[i];
 
       	}
+   printf("Halfway through func5\n");
 
       // int i;
+   double weight = 1/((double)(n));
 
       // #pragma omp parallel for private(i) num_threads(NUM_THREADS)
    	// for(i = 0; i < n; i++){
-      #pragma omp for private(i)
+      // #pragma omp for private(i)
+      #pragma omp parallel for private(i)
       for(i = 0; i < n; i++){
    		arrayX[i] = x_j[i];
    		arrayY[i] = y_j[i];
    		weights[i] = weight;
    	}
-   }
+   // }
+   printf("Exiting func5\n");
+
 }
