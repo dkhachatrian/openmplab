@@ -94,12 +94,38 @@ void func3(double *arrayX, double *arrayY, double *weights, double *x_e, double 
 
    double estimate_x=0.0;
    double estimate_y=0.0;
-    int i;
+   int i;
 
-   for(i = 0; i < n; i++){
-         estimate_x += arrayX[i] * weights[i];
-         estimate_y += arrayY[i] * weights[i];
-      }
+      #pragma omp parallel for private(i) reduction(+:estimate_x, estimate_y) num_threads(NTHREADS)
+      for(i = 0; i < n; i++){
+            estimate_x += arrayX[i] * weights[i];
+            estimate_y += arrayY[i] * weights[i];
+         }
+
+
+   // #pragma omp parallel for private(i) num_threads(NTHREADS)
+   // #pragma omp parallel num_threads(NTHREADS)
+   // {
+   //    double accx = 0.0;
+   //    double accy = 0.0;
+   //    #pragma omp for private(i) reduction(+:accx)
+   //    for(i = 0; i < n; i++){
+   //          accx += arrayX[i] * weights[i];
+   //          accy += arrayY[i] * weights[i];
+   //       }
+
+   //    #pragma omp atomic
+   //       estimate_x += accx;
+   //    #pragma omp atomic
+   //       estimate_y += accy;
+   // }
+
+
+
+      // for(i = 0; i < n; i++){
+      //       estimate_x += arrayX[i] * weights[i];
+      //       estimate_y += arrayY[i] * weights[i];
+      //    }
 
    *x_e = estimate_x;
    *y_e = estimate_y;
