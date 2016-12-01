@@ -1,0 +1,70 @@
+Starting things off by using gprof to see the biggest hogs:
+	make seq GPROF=1
+	./filter
+		FUNC TIME : 0.640635
+		TOTAL TIME : 2.625032
+	gprof filter
+		...
+		4194304/5177344     addSeed [13]
+
+So locations where addSeed is utilized seem to be the biggest problem.
+
+
+$ make seq MTRACE=1 # original source code is untouched
+	gcc -o seq  -O3 -DMTRACE filter.c main.c func.c util.c -lm
+$ make checkmem
+	mtrace filter mtrace.out || true
+
+	Memory not freed:
+	-----------------
+	           Address     Size     Caller
+	0x000000000112b550  0x20000  at ??:?
+	0x000000000114b560    0x238  at 0x7f15c1b5e37d
+	0x000000000114b7a0    0x238  at 0x7f15c1b5e37d
+	0x000000000114b9e0    0x144  at ??:?
+	0x000000000114bb30    0x450  at ??:?
+	0x000000000114bf90  0x40000  at ??:?
+	0x000000000118bfa0  0x40000  at ??:?
+	0x00000000011cbfb0  0x40000  at ??:?
+	0x000000000120bfc0    0x700  at 0x7f15c20e47a9
+	0x000000000120c6d0     0xc0  at 0x7f15c20e47a9
+	0x000000000120c7a0     0x28  at 0x7f15c20e47f9
+	0x000000000120c7d0    0x120  at 0x7f15c2612e15
+	0x000000000120c900    0x120  at 0x7f15c2612e15
+	0x000000000120ca30    0x120  at 0x7f15c2612e15
+	0x000000000120cb60  0x40000  at ??:?
+	0x000000000124cb70  0x40000  at ??:?
+	0x000000000128cb80  0x40000  at ??:?
+	0x00000000012ccb90  0x40000  at ??:?
+	0x000000000130cba0  0x40000  at ??:?
+	0x000000000134cbb0 0x8a0000  at ??:?
+	0x00007f15c0ae0010 0x1000000  at ??:?
+
+
+
+After several attempts trying to be fancy with my parallelism and each of these attempts being shot down to the ground, I iteratively added "simpler" concurrent constructs, namely a flavor of:
+	#pragma omp parallel for private([loop variables]) num_threads(NTHREADS)
+
+Doing this led to a roughly 2.5-fold speedup:
+	FUNC TIME : 0.250647
+	TOTAL TIME : 2.524696
+
+
+Noting index_X and index_Y in func1 needed to be made private (and being furious with myself for taking so long to notice that this was necessary) led to a huge speedup:
+	FUNC TIME : 0.097277
+	TOTAL TIME : 2.343229
+
+Changing the number of threads from 12 to 16 helped things along a bit as well:
+	FUNC TIME : 0.080299
+	TOTAL TIME : 2.235937
+
+
+Without other flags enabled (i.e. by making using 'make seq'), it seems filter's func time comes out to approximately 0.5 seconds:
+	FUNC TIME : 0.503211
+	TOTAL TIME : 2.511519
+
+So a >6x speedup was achieved!
+
+
+Noting that some of the simpler functions (e.g. func4) were better left untouched for better speed made it clearer just how the overhead of creating threads can overshow the potential speedup of \
+running a loop concurrently, if the loop body is sufficiently simple.
