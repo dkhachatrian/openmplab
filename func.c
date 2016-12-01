@@ -1,3 +1,8 @@
+// OpenMP Lab for CS 33
+// Name: David G. Khachatrian
+// UID: 304 - 296 - 666
+
+
 #include "func.h"
 #include "util.h"
 
