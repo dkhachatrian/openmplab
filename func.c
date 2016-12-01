@@ -3,7 +3,7 @@
 
 #include "omp.h"
 
-const int NTHREADS = 8;
+const int NTHREADS = 16;
 
 void func0(double *weights, double *arrayX, double *arrayY, int xr, int yr, int n)
 {
@@ -64,17 +64,23 @@ void func2(double *weights, double *probability, int n)
    int i;
    double sumWeights=0;
 
+
    #pragma omp parallel for private(i) num_threads(NTHREADS)
+   // #pragma omp simd
    for(i = 0; i < n; i++)
-         weights[i] = weights[i] * exp(probability[i]);
+      weights[i] *= exp(probability[i]);
+         // weights[i] = weights[i] * exp(probability[i]);
 
    #pragma omp parallel for private(i) num_threads(NTHREADS) reduction(+:sumWeights)
    for(i = 0; i < n; i++)
       sumWeights += weights[i];
 
    #pragma omp parallel for private(i) num_threads(NTHREADS)
+   // #pragma omp simd
    for(i = 0; i < n; i++)
-         weights[i] = weights[i]/sumWeights;
+      weights[i] /= sumWeights;
+
+         // weights[i] = weights[i]/sumWeights;
 
    // printf("Exiting func2\n");
 
