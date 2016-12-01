@@ -4,7 +4,7 @@
 #include "omp.h"
 
 // const int NTHREADS = 12;
-#define NTHREADS 12
+#define NTHREADS 16
 
 void func0(double *weights, double *arrayX, double *arrayY, int xr, int yr, int n)
 {
