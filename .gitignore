@@ -3,3 +3,5 @@ gmon.out
 omp
 output.txt
 seq
+*.out
+_*
