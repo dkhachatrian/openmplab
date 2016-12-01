@@ -31,11 +31,13 @@ void func1(int *seed, int *array, double *arrayX, double *arrayY,
       int index_X, index_Y;
    int max_size = X*Y*Z;
 
+      #pragma omp parallel for private(i) num_threads(NTHREADS)
       for(i = 0; i < n; i++){
          arrayX[i] += 1 + 5*rand2(seed, i);
          arrayY[i] += -2 + 2*rand2(seed, i);
       }
 
+      #pragma omp parallel for private(i,j) num_threads(NTHREADS)
       for(i = 0; i<n; i++){
          for(j = 0; j < Ones; j++){
             index_X = round(arrayX[i]) + objxy[j*2 + 1];
