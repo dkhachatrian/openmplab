@@ -38,7 +38,7 @@ void func1(int *seed, int *array, double *arrayX, double *arrayY,
          arrayY[i] += -2 + 2*rand2(seed, i);
       }
 
-      #pragma omp parallel for private(i,j) num_threads(NTHREADS)
+      #pragma omp parallel for private(i,j,index_X,index_Y) num_threads(NTHREADS)
       for(i = 0; i<n; i++){
          int iones = i*Ones;
 
@@ -46,11 +46,10 @@ void func1(int *seed, int *array, double *arrayX, double *arrayY,
             int ionesj = iones + j;
             index_X = round(arrayX[i]) + objxy[j*2 + 1];
             index_Y = round(arrayY[i]) + objxy[j*2];
-            index[i*Ones + j] = fabs(index_X*Y*Z + index_Y*Z + iter);
+            index[ionesj] = fabs(index_X*Y*Z + index_Y*Z + iter);
             if(index[ionesj] >= max_size)
                index[ionesj] = 0;
          }
-         probability[i] = 0;
 
          int accpi = 0;
 
@@ -90,13 +89,14 @@ void func2(double *weights, double *probability, int n)
    //    sumWeights += weights[i];
 
 
+   #pragma omp simd
+   for(i = 0; i < n; i++)
+      weights[i] *= exp(probability[i]);
+
    #pragma omp parallel for private(i) reduction(+:sumWeights) num_threads(NTHREADS)
    for(i = 0; i < n; i++)
-   {
-      weights[i] *= exp(probability[i]);
       sumWeights += weights[i];
-   }
-
+   
 
    // #pragma omp parallel for private(i) num_threads(NTHREADS)
    #pragma omp simd
@@ -189,11 +189,14 @@ void func5(double *x_j, double *y_j, double *arrayX, double *arrayY, double *wei
 
       }
 
+   // double weight = 1/((double)(n));
+
    #pragma omp parallel for private(i) num_threads(NTHREADS)
    for(i = 0; i < n; i++){
       arrayX[i] = x_j[i];
       arrayY[i] = y_j[i];
       weights[i] = 1/((double)(n));
+      // weights[i] = weight;
    }
 
    // printf("Exiting func5\n");
